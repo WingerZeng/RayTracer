@@ -5,7 +5,7 @@
 #include "light.h"
 #include "types.h"
 #include "camera.h"
-class Scene
+class Scene: public RTObject
 {
 public:
 	Scene();
@@ -40,6 +40,6 @@ private:
 	std::vector<std::vector<Color>> colorArray_;
 
 	int sampleNum_=10;
-	int maxJump_=5;
+	int maxJump_=8;
 };
 

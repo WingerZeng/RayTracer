@@ -1,6 +1,7 @@
 #include "time.h"
 #include "camera.h"
 #include "definitions.h"
+#include "algorithms.h"
 Camera::Camera(Vec3 lookFrom, Vec3 lookAt, Vec3 vup, double vfov, double aspect)
 {
 	d_ = (lookAt - lookFrom).length();
@@ -29,16 +30,15 @@ Camera::~Camera()
 DepthCamera::DepthCamera(Vec3 lookFrom, Vec3 lookAt, Vec3 vup, double vfov, double aspect, double aperture)
 	:Camera(lookFrom, lookAt, vup, vfov, aspect),aperture_(aperture)
 {
+	setRandomEnabled(true);
 }
 
 Ray DepthCamera::getRay(float s, float t)
 {
+	// TODO 改造为基于圆盘的随机
 	Ray ray;
 	double x, y;
-	do {
-		x = (rand() * 1.0 / RAND_MAX - 0.5) * 2;
-		y = (rand() * 1.0 / RAND_MAX - 0.5) * 2;
-	} while (x* x + y * y >= 1.0);
+	algorithm::randFromDisk(&x, &y);
 	ray.e = e_ + u_ * (x * aperture_) + v_ * (y * aperture_);
 	Vec3 lookat = leftLowerCorner + u_ * s * width + v_ * t * height;
 	ray.d = (lookat - ray.e).normalize();

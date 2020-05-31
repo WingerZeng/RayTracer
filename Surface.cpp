@@ -149,7 +149,13 @@ Material::Material(Color amb, Color dif, Color spe, double shi)
 }
 
 Material::Material(Color amb, Color dif, Color spe, Color mir, double shi)
-	: ambient(amb), diffuse(dif), specular(spe),mirror(mir),shine(shi)
+	:ambient(amb), diffuse(dif), specular(spe),mirror(mir),shine(shi)
 {
-	type = SPECULAR;
+	type = Type(SPECULAR|NORMAL);
+}
+
+Material::Material(Color a, double nr)
+	:a_(a),nr_(nr)
+{
+	type = TRANSPARENT;
 }

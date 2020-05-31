@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <iostream>
-
+#include "definitions.h"
 class Vec3;
 std::ostream& operator<<(std::ostream& ios, const Vec3& rhs);
 class Vec3
@@ -21,31 +21,41 @@ public:
 		return *this* (1 / length());
 	}
 
-	double length() {
+	double length() const{
 		return sqrt(x_ * x_ + y_ * y_ + z_ * z_);
 	}
 
-	Vec3 operator-() {
-		return Vec3(-x_, -y_, -z_);
+	bool isZero() {
+		return (abs(x_) < ZERO) && (abs(y_) < ZERO) && (abs(z_) < ZERO);
 	}
 
-	Vec3 operator-(const Vec3& rhs) {
-		return Vec3(x_ - rhs.x_, y_ - rhs.y_, z_ - rhs.z_);
-	}
-
-	double operator*(const Vec3& rhs) {
-		return x_ * rhs.x_ + y_* rhs.y_ + z_ * rhs.z_;
-	}
-
-	Vec3 operator*(const double& rhs){
+	Vec3 operator*(const double& rhs) const{
 		return Vec3(x_ * rhs, y_ * rhs, z_ * rhs);
 	}
 
-	Vec3 operator+(const Vec3& rhs) {
+	Vec3 reflact(const Vec3& normal) const{
+		Vec3 proj = -normal*(*this * normal);
+		return (proj * 2 + *this).normalize();
+	}
+
+	Vec3 operator-()  const {
+		return Vec3(-x_, -y_, -z_);
+	}
+
+	Vec3 operator-(const Vec3& rhs)  const {
+		return Vec3(x_ - rhs.x_, y_ - rhs.y_, z_ - rhs.z_);
+	}
+
+	double operator*(const Vec3& rhs) const{
+		return x_ * rhs.x_ + y_* rhs.y_ + z_ * rhs.z_;
+	}
+
+
+	Vec3 operator+(const Vec3& rhs)  const {
 		return Vec3(x_ + rhs.x_, y_ + rhs.y_, z_ + rhs.z_);
 	}
 
-	Vec3 operator^(const Vec3& rhs) {
+	Vec3 operator^(const Vec3& rhs)  const {
 		double a = x_;
 		double b = y_;
 		double c = z_;

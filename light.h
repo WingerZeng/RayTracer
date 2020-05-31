@@ -1,8 +1,9 @@
 #pragma once
 #include "definitions.h"
 #include "types.h"
+#include "RTObject.h"
 
-class Light
+class Light: public RTObject
 {
 public:
 	Light(Vec3 pos,Color ambient,Color diffuse,Color specular);
@@ -24,7 +25,7 @@ class FaceLight : public Light
 {
 public:
 	FaceLight(Vec3 pos,Vec3 normal,Vec3 up, double width, double height, Color ambient, Color diffuse, Color specular);
-	void setSamplePosition(double u, double v) override;
+	//void setSamplePosition(double u, double v) override;
 	Vec3 getPosition() override;
 private:
 	double uoff_;

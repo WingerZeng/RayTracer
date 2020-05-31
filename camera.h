@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
-class Camera
+#include "RTObject.h"
+class Camera: public RTObject
 {
 public:
 	//lookFrom为原点，lookAt为窗口的中心点，vup为全局上方向，vfov为u方向视角，aspect为宽高比
