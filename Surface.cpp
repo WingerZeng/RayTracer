@@ -6,7 +6,6 @@ Node::Node()
 {
 }
 
-
 Node::~Node()
 {
 }
@@ -68,6 +67,7 @@ bool Sphere::hit(Ray ray, double t0, double t1, HitRecord* rec)
 Ground::Ground(double y)
 	:y_(y)
 {
+	type = GROUND;
 }
 
 bool Ground::hit(Ray ray, double t0, double t1, HitRecord* rec)
@@ -86,6 +86,7 @@ bool Ground::hit(Ray ray, double t0, double t1, HitRecord* rec)
 void Group::addChild(std::shared_ptr<Node> child)
 {
 	children.push_back(child);
+	RTObject::addChild(child);
 }
 
 bool Group::hit(Ray ray, double t0, double t1, HitRecord* rec)
@@ -108,6 +109,7 @@ bool Group::hit(Ray ray, double t0, double t1, HitRecord* rec)
 Wall_z::Wall_z(double z)
 	:z_(z)
 {
+	type = WALL_Z;
 }
 
 bool Wall_z::hit(Ray ray, double t0, double t1, HitRecord* rec)
@@ -127,6 +129,7 @@ bool Wall_z::hit(Ray ray, double t0, double t1, HitRecord* rec)
 Wall_x::Wall_x(double x)
 	:x_(x)
 {
+	type = WALL_X;
 }
 
 bool Wall_x::hit(Ray ray, double t0, double t1, HitRecord* rec)

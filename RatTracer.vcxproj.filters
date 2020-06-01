@@ -42,15 +42,15 @@
     <ClInclude Include="RTObject.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="cudaRayTracer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="types.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Surface.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="camera.cpp">
@@ -65,5 +65,16 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="scene.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="bmpgenerator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="cudaRayTracer.cu">
+      <Filter>源文件</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include "definitions.h"
 class Vec3;
 std::ostream& operator<<(std::ostream& ios, const Vec3& rhs);

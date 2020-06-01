@@ -50,15 +50,24 @@ private:
 	Color a_; //¹âÇ¿ËðÊ§
 	double nr_; //refraction coefficient
 };
-
 class Node:public RTObject
 {
 public:
+	enum Type {
+		GROUP = 0,
+		SPHERE,
+		GROUND,
+		WALL_Z,
+		WALL_X,
+	};
 	Node();
 	virtual ~Node();
 	virtual bool hit(Ray ray,double t0,double t1,HitRecord* rec) = 0;
 	int setMaterial(std::shared_ptr<Material> Mat);
 	std::shared_ptr<Material> getMaterial();
+
+protected:
+	Type type;
 private:
 	bool hasMat = false;
 	std::shared_ptr<Material> mat;
@@ -77,7 +86,9 @@ class Sphere : public Node
 {
 public:
 	Sphere(Vec3 center,double radius)
-		:center_(center),radius_(radius) {}
+		:center_(center),radius_(radius) {
+		type = SPHERE;
+	}
 
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
 
@@ -115,3 +126,52 @@ public:
 private:
 	double x_;
 };
+
+//__global__ void hit(Node* node, Ray ray, double t0, double t1, HitRecord* rec, bool* hit) {
+//	switch (node->type)
+//	{
+//	case Node::SPHERE:
+//	{
+//		double dieta = pow(ray.d * (ray.e - center_), 2) - (ray.d * ray.d) * ((ray.e - center_) * (ray.e - center_) - radius_ * radius_);
+//		double deno = ray.d * ray.d;
+//		double pre = -ray.d * (ray.e - center_);
+//		double t;
+//		if (abs(dieta) < ZERO) {
+//			t = pre / deno;
+//		}
+//		else if (dieta > 0) {
+//			double pt = (pre - sqrt(dieta)) / deno;
+//			double nt = (pre + sqrt(dieta)) / deno;
+//			bool f1 = false;
+//			bool f2 = false;
+//			if (pt > t1 || pt < t0) f1 = true;
+//			if (nt > t1 || nt < t0) f2 = true;
+//
+//			//Vec3 p1 = ray.e + ray.d * pt;
+//			//Vec3 p2 = ray.e + ray.d * nt;
+//
+//			if (f1 && f2) {
+//				return false;
+//			}
+//			if (!f1) {
+//				t = pt;
+//			}
+//			else {
+//				t = nt;
+//			}
+//		}
+//		else if (dieta < 0) {
+//			return false;
+//		}
+//		if (rec) {
+//			rec->t = t;
+//			rec->normal = ((ray.e + ray.d * t) - center_).normalize();
+//			//std::cout << rec->normal;
+//			rec->mat = getMaterial();
+//		}
+//
+//	}
+//	default:
+//		break;
+//	}
+//}
