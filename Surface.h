@@ -7,7 +7,20 @@
 #include "octree.h"
 #include "material.h"
 using namespace rt;
-class Node:public RTObject //用visitor模式来实现hit
+class AbstructNode
+{
+public:
+	int getBoundBox(Vec3 box[2]);
+	virtual int computeBoundBox() {}; //TODO 完成包围盒计算
+	virtual bool calHit(const Ray& ray, double t0, double t1, HitRecord* rec) = 0;
+	inline bool isHitBox(const Ray& ray, double t0, double t1) { return algorithm::hitBox(box_, ray, t0, t1, nullptr); }
+
+protected:
+	bool dirtyBound_ = true;
+	Vec3 box_[2];
+};
+
+class Node:public AbstructNode,public RTObject //用visitor模式来实现hit
 {
 public:
 	enum Type {
@@ -21,15 +34,15 @@ public:
 	Node(const Node& node, rt::CopyOp copyop);
 	META_Object(Node)
 	virtual ~Node();
-	inline bool calHit(Ray ray, double t0, double t1, HitRecord* rec);
+	bool calHit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 	virtual Vec3 getNormal(Vec3 pos);
 	int setMaterial(std::shared_ptr<Material> Mat);
 	std::shared_ptr<Material> getMaterial() const { return mat; }
 
 protected:
 	virtual Vec3 getRawNormal(Vec3 pos) { return Vec3(1,0,0); }
-	virtual bool hit(Ray ray, double t0, double t1, HitRecord* rec) { return false; };
-	virtual void doAfterHit(Ray ray, HitRecord* rec);
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) { return false; };
+	virtual void doAfterHit(const Ray& ray, HitRecord* rec);
 	Type type;
 private:
 	bool hasMat = false;
@@ -43,7 +56,7 @@ public:
 	Group(const Group& group, rt::CopyOp copyop);
 	META_Object(Group)
 	void addChild(std::shared_ptr<Node> child);
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 private:
 	std::vector<std::shared_ptr<Node>> children;
 };
@@ -52,7 +65,7 @@ class Drawable : public Node
 {
 public:
 	using Node::Node;
-	void doAfterHit(Ray ray, HitRecord * rec);
+	void doAfterHit(const Ray& ray, HitRecord * rec);
 };
 
 class Sphere : public Drawable
@@ -67,7 +80,7 @@ public:
 	META_Object(Sphere)
 
 	Vec3 getRawNormal(Vec3 pos) override;
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 private:
 	Vec3 center_;
 	double radius_;
@@ -83,7 +96,7 @@ public:
 	META_Object(HeartShape)
 
 	Vec3 getRawNormal(Vec3 pos) override;
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 private:
 	template<typename T> static T heartFunc(T in,Ray ray);
 	template<typename T> static T heartFuncd(T in,Ray ray);
@@ -99,7 +112,7 @@ public:
 	Ground(const Ground& ground, rt::CopyOp copyop);
 	META_Object(Ground)
 
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 	Vec3 getRawNormal(Vec3 pos) override { return Vec3(0, 1, 0); }
 private:
 	double y_;
@@ -112,7 +125,7 @@ public:
 	Wall_z(const Wall_z& wall, rt::CopyOp copyop);
 	META_Object(Wall_z)
 
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 	Vec3 getRawNormal(Vec3 pos) override { return Vec3(0, 0, 1); };
 private:
 	double z_;
@@ -126,7 +139,7 @@ public:
 
 	META_Object(Wall_x)
 
-	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 	Vec3 getRawNormal(Vec3 pos) override { return Vec3(1, 0, 0); };
 private:
 	double x_;
@@ -188,7 +201,7 @@ inline Node::Node(const Node & node, rt::CopyOp copyop)
 	}
 }
 
-inline bool Node::calHit(Ray ray, double t0, double t1, HitRecord * rec)
+inline bool Node::calHit(const Ray& ray, double t0, double t1, HitRecord * rec)
 {
 	if (hit(ray, t0, t1, rec)) {
 		if (mat) {

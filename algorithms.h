@@ -181,4 +181,58 @@ namespace algorithm {
 		}
 		return  -1;
 	}
+
+	inline bool hitBox(Vec3 bound[2], Ray ray, double t0, double t1, HitRecord* rec) {
+		Vec3 vt0 = (bound[0] - ray.e) / ray.d;
+		Vec3 vt1 = (bound[1] - ray.e) / ray.d;
+		std::vector<double> tmin{ std::min(vt0.x_,vt1.x_),std::min(vt0.y_,vt1.y_),std::min(vt0.z_,vt1.z_) };
+		std::vector<double> tmax{ std::max(vt0.x_,vt1.x_),std::max(vt0.y_,vt1.y_),std::max(vt0.z_,vt1.z_) };
+		tmin.push_back(t0);
+		tmax.push_back(t1);
+		if (*std::max_element(tmin.begin(), tmin.end()) <= *std::max_element(tmin.begin(), tmin.end())) {
+			if (rec) rec->t = *std::max_element(tmin.begin(), tmin.end());
+			return true;
+		}
+		return false;
+	}
+
+	inline Vec3 getBoundPoint(int index, Vec3 bound[2]) {
+		int ix;
+		int iy;
+		switch (index % 4)
+		{
+		case 0:
+			ix = iy = 0;
+			break;
+		case 1:
+			ix = 1;
+			iy = 0;
+			break;
+		case 2:
+			ix = iy = 1;
+			break;
+		case 3:
+			ix = 1;
+			iy = 0;
+			break;
+		}
+		int iz = (index >> 2) & 1;
+		return Vec3(bound[ix].x_, bound[iy].y_, bound[iz].z_);
+	}
+
+	inline bool isPointInsideBoundBox(BoundBox_t bound, Point_t point) {
+		return (point.x_ >= bound[0].x_&&point.x_ <= bound[1].x_) &&
+				(point.y_ >= bound[0].y_&&point.y_ <= bound[1].y_) &&
+				(point.z_ >= bound[0].z_&&point.z_ <= bound[1].z_);
+	}
+
+	inline bool isBoundBoxOverLap(BoundBox_t bound1, BoundBox_t bound2) {
+		return (std::max(bound1[0].x_, bound2[0].x_) < std::min(bound1[1].x_, bound2[1].x_)) &&
+			(std::max(bound1[0].y_, bound2[0].y_) < std::min(bound1[1].y_, bound2[1].y_)) &&
+			(std::max(bound1[0].z_, bound2[0].z_) < std::min(bound1[1].z_, bound2[1].z_));
+	}
+
+	inline bool isBoundInsideBound(BoundBox_t  outerbound, BoundBox_t innerbound) {
+		return isPointInsideBoundBox(outerbound, innerbound[0]) && isPointInsideBoundBox(outerbound, innerbound[1]);
+	}
 }

@@ -31,8 +31,8 @@ public:
 	//Must be called after called run()
 	int saveToBpm(const char* filaname);
 
-	Color rayColor(Ray ray, double t0, double t1, int jumptime = 0);
-	//__global__ void rayColor(Ray ray, double t0, double t1, int jumptime, Color& cout);
+	Color rayColor(const Ray& ray, double t0, double t1, int jumptime = 0);
+	//__global__ void rayColor(const Ray& ray, double t0, double t1, int jumptime, Color& cout);
 
 private:
 	inline void setPixelColor(int x, int y, Color color);

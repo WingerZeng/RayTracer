@@ -8,5 +8,6 @@ const double PI = 3.1415926;
 
 typedef double(*ImpicitFunc)(Vec3);
 using StdImpicitFunc = std::function<double(Vec3)>;
-
+typedef Vec3 BoundBox_t[2];
+typedef Vec3 Point_t;
 typedef Vec4 Color;

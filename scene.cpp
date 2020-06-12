@@ -180,7 +180,7 @@ int Scene::saveToBpm(const char* filaname)
 	return -1;
 }
 
-Color Scene::rayColor(Ray ray, double t0, double t1, int jumpTime)
+Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime)
 {
 	if (jumpTime > maxJump_) {
 		return backGround_;

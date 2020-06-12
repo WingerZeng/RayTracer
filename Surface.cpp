@@ -30,7 +30,7 @@ int Node::setMaterial(std::shared_ptr<Material> Mat)
 	return 0;
 }
 
-void Node::doAfterHit(Ray ray, HitRecord * rec)
+void Node::doAfterHit(const Ray& ray, HitRecord * rec)
 {
 }
 
@@ -44,7 +44,7 @@ Vec3 Sphere::getRawNormal(Vec3 pos)
 	return (pos - center_).normalize();
 }
 
-bool Sphere::hit(Ray ray, double t0, double t1, HitRecord* rec)
+bool Sphere::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 {
 	double dieta = pow(ray.d * (ray.e - center_), 2) - (ray.d * ray.d) * ((ray.e - center_) * (ray.e - center_) - radius_ * radius_);
 	double deno = ray.d * ray.d;
@@ -95,7 +95,7 @@ Ground::Ground(const Ground & ground, rt::CopyOp copyop)
 {
 }
 
-bool Ground::hit(Ray ray, double t0, double t1, HitRecord* rec)
+bool Ground::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 {
 	if (ray.e.y_ > y_ && ray.d.y_ < 0) {
 		double t = (ray.e.y_ - y_) / -ray.d.y_;
@@ -131,7 +131,7 @@ void Group::addChild(std::shared_ptr<Node> child)
 	RTObject::addChild(child);
 }
 
-bool Group::hit(Ray ray, double t0, double t1, HitRecord* rec)
+bool Group::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 {
 	bool flag = 0;
 	double t = t1;
@@ -159,7 +159,7 @@ Wall_z::Wall_z(const Wall_z & wall, rt::CopyOp copyop)
 {
 }
 
-bool Wall_z::hit(Ray ray, double t0, double t1, HitRecord* rec)
+bool Wall_z::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 {
 	if (ray.e.z_ > z_ && ray.d.z_ < 0) {
 		double t = (ray.e.z_ - z_) / -ray.d.z_;
@@ -182,7 +182,7 @@ Wall_x::Wall_x(const Wall_x & wall, rt::CopyOp copyop)
 {
 }
 
-bool Wall_x::hit(Ray ray, double t0, double t1, HitRecord* rec)
+bool Wall_x::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 {
 	if (ray.e.x_ > x_ && ray.d.x_ < 0) {
 		double t = (ray.e.x_ - x_) / -ray.d.x_;
@@ -193,7 +193,7 @@ bool Wall_x::hit(Ray ray, double t0, double t1, HitRecord* rec)
 	else return false;
 }
 
-void Drawable::doAfterHit(Ray ray, HitRecord * rec)
+void Drawable::doAfterHit(const Ray& ray, HitRecord * rec)
 {
 	rec->normal = getNormal(ray.e + ray.d * rec->t);
 }
@@ -219,7 +219,7 @@ Vec3 HeartShape::getRawNormal(Vec3 pos)
 	return n.normalize();
 }
 
-bool HeartShape::hit(Ray ray, double t0, double t1, HitRecord * rec)
+bool HeartShape::hit(const Ray& ray, double t0, double t1, HitRecord * rec)
 {
 	double root;
 	double dist = (center_ - ray.e).length();
@@ -248,4 +248,14 @@ bool HeartShape::hit(Ray ray, double t0, double t1, HitRecord * rec)
 		return true;
 	}
 	return false;
+}
+
+int AbstructNode::getBoundBox(Vec3 box[2])
+{
+	if (dirtyBound_) {
+		computeBox();
+	}
+	box[0] = box_[0];
+	box[1] = box_[1];
+	return 0;
 }
