@@ -4,7 +4,6 @@
 #include <sstream>
 #include "scene.h"
 #include "AviSaver.h"
-#include "mpi.h"
 #include "bmpgenerator.h"
 #include "types.h"
 
