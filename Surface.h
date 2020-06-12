@@ -3,54 +3,11 @@
 #include "types.h"
 #include "definitions.h"
 #include "RTObject.h"
-
-class Material
-{
-public:
-	Material(Color amb, Color dif, Color spe, double shi); //NORMAL MERERIAL
-	Material(Color amb, Color dif, Color spe, Color mir, double shi); //SPECULAR MERERIAL
-	Material(Color a, double nr); //TRANSPARENT MERERIAL
-	Material() = default;
-	enum Type {
-		NORMAL = 0x1,
-		SPECULAR = 0x2,
-		TRANSPARENT = 0x4,
-	};
-
-	//virtual Type getType() { return type; }
-	//virtual Color getAmbient() { return ambient; }
-	//virtual Color getDiffuse() { return diffuse; }
-	//virtual Color getSpecular() { return specular; }
-	//virtual Color getMirror() { return mirror; }
-	//virtual double getShine() { return shine; }
-	virtual void setMirrorBlur(double b) { blur = b; }
-	//virtual Color getRefraction() { return refraction; }
-	//virtual double getRefraCoef() { return nr; }
-	//virtual Color getAttenuation() { return a; }
-
-	virtual Type getType() { return type; }
-	virtual Color getAmbient() { return ambient; }
-	virtual Color getDiffuse() { return diffuse; }
-	virtual Color getSpecular() { return specular; }
-	virtual Color getMirror() { return mirror; }
-	virtual double getShine() { return shine; }
-	virtual double getMirrorBlur() { return blur; }
-	virtual double getRefraCoef() { return nr_; }
-	virtual Color getAttenuation() { return a_; }
-
-private:
-	Type type;
-	Color ambient;
-	Color diffuse;
-	Color specular;
-	Color mirror;
-	double shine;
-	double blur=0;
-	//for refraction
-	Color a_; //光强损失
-	double nr_; //refraction coefficient
-};
-class Node:public RTObject
+#include "algorithms.h"
+#include "octree.h"
+#include "material.h"
+using namespace rt;
+class Node:public RTObject //用visitor模式来实现hit
 {
 public:
 	enum Type {
@@ -61,12 +18,18 @@ public:
 		WALL_X,
 	};
 	Node();
+	Node(const Node& node, rt::CopyOp copyop);
+	META_Object(Node)
 	virtual ~Node();
-	virtual bool hit(Ray ray,double t0,double t1,HitRecord* rec) = 0;
+	inline bool calHit(Ray ray, double t0, double t1, HitRecord* rec);
+	virtual Vec3 getNormal(Vec3 pos);
 	int setMaterial(std::shared_ptr<Material> Mat);
-	std::shared_ptr<Material> getMaterial();
+	std::shared_ptr<Material> getMaterial() const { return mat; }
 
 protected:
+	virtual Vec3 getRawNormal(Vec3 pos) { return Vec3(1,0,0); }
+	virtual bool hit(Ray ray, double t0, double t1, HitRecord* rec) { return false; };
+	virtual void doAfterHit(Ray ray, HitRecord* rec);
 	Type type;
 private:
 	bool hasMat = false;
@@ -76,102 +39,164 @@ private:
 class Group :public Node
 {
 public:
+	Group() = default;
+	Group(const Group& group, rt::CopyOp copyop);
+	META_Object(Group)
 	void addChild(std::shared_ptr<Node> child);
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
 private:
 	std::vector<std::shared_ptr<Node>> children;
 };
 
-class Sphere : public Node
+class Drawable : public Node
+{
+public:
+	using Node::Node;
+	void doAfterHit(Ray ray, HitRecord * rec);
+};
+
+class Sphere : public Drawable
 {
 public:
 	Sphere(Vec3 center,double radius)
 		:center_(center),radius_(radius) {
 		type = SPHERE;
 	}
+	Sphere(const Sphere& sphere, rt::CopyOp copyop);
 
+	META_Object(Sphere)
+
+	Vec3 getRawNormal(Vec3 pos) override;
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
-
 private:
 	Vec3 center_;
 	double radius_;
 };
 
-class Ground : public Node
+class HeartShape : public Drawable
+{
+public:
+	HeartShape(Vec3 center, double scale)
+		:center_(center), scale_(scale) {};
+	HeartShape(const HeartShape& heartshape, rt::CopyOp copyop);
+
+	META_Object(HeartShape)
+
+	Vec3 getRawNormal(Vec3 pos) override;
+	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+private:
+	template<typename T> static T heartFunc(T in,Ray ray);
+	template<typename T> static T heartFuncd(T in,Ray ray);
+	inline static double heartImplicitFunc(Vec3 pos);
+	Vec3 center_;
+	double scale_;
+};
+
+class Ground : public Drawable
 {
 public:
 	Ground(double y);
+	Ground(const Ground& ground, rt::CopyOp copyop);
+	META_Object(Ground)
 
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	Vec3 getRawNormal(Vec3 pos) override { return Vec3(0, 1, 0); }
 private:
 	double y_;
 };
 
-class Wall_z : public Node
+class Wall_z : public Drawable
 {
 public:
 	Wall_z(double z);
+	Wall_z(const Wall_z& wall, rt::CopyOp copyop);
+	META_Object(Wall_z)
 
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	Vec3 getRawNormal(Vec3 pos) override { return Vec3(0, 0, 1); };
 private:
 	double z_;
 };
 
-class Wall_x : public Node
+class Wall_x : public Drawable
 {
 public:
 	Wall_x(double x);
+	Wall_x(const Wall_x& wall, rt::CopyOp copyop);
+
+	META_Object(Wall_x)
 
 	bool hit(Ray ray, double t0, double t1, HitRecord* rec) override;
+	Vec3 getRawNormal(Vec3 pos) override { return Vec3(1, 0, 0); };
 private:
 	double x_;
 };
 
-//__global__ void hit(Node* node, Ray ray, double t0, double t1, HitRecord* rec, bool* hit) {
-//	switch (node->type)
-//	{
-//	case Node::SPHERE:
-//	{
-//		double dieta = pow(ray.d * (ray.e - center_), 2) - (ray.d * ray.d) * ((ray.e - center_) * (ray.e - center_) - radius_ * radius_);
-//		double deno = ray.d * ray.d;
-//		double pre = -ray.d * (ray.e - center_);
-//		double t;
-//		if (abs(dieta) < ZERO) {
-//			t = pre / deno;
-//		}
-//		else if (dieta > 0) {
-//			double pt = (pre - sqrt(dieta)) / deno;
-//			double nt = (pre + sqrt(dieta)) / deno;
-//			bool f1 = false;
-//			bool f2 = false;
-//			if (pt > t1 || pt < t0) f1 = true;
-//			if (nt > t1 || nt < t0) f2 = true;
-//
-//			//Vec3 p1 = ray.e + ray.d * pt;
-//			//Vec3 p2 = ray.e + ray.d * nt;
-//
-//			if (f1 && f2) {
-//				return false;
-//			}
-//			if (!f1) {
-//				t = pt;
-//			}
-//			else {
-//				t = nt;
-//			}
-//		}
-//		else if (dieta < 0) {
-//			return false;
-//		}
-//		if (rec) {
-//			rec->t = t;
-//			rec->normal = ((ray.e + ray.d * t) - center_).normalize();
-//			//std::cout << rec->normal;
-//			rec->mat = getMaterial();
-//		}
-//
-//	}
-//	default:
-//		break;
-//	}
-//}
+//--------inline definition-----------------
+
+inline double HeartShape::heartImplicitFunc(Vec3 pos) {
+	double x = pos.x_;
+	double y = pos.z_;
+	double z = pos.y_;
+	double temp = x * x + y * y * 9.0 / 4 + z * z - 1;
+	return -(x*x*z*z*z) - y * y*z*z*z*9.0 / 80 + temp * temp*temp;
+}
+
+template<typename T>
+inline T HeartShape::heartFunc(T in, Ray ray)
+{
+	const auto& d = ray.d;
+	const auto& e = ray.e;
+	//交换xy轴
+	T x = in * d.x_ + e.x_;
+	T y = in * d.z_ + e.z_;
+	T z = in * d.y_ + e.y_;
+	T temp = x * x + y * y * 9.0 / 4 + z * z - 1;
+	return -(x*x*z*z*z) - y * y*z*z*z*9.0 / 80 + temp*temp*temp;
+}
+
+template<typename T>
+inline T HeartShape::heartFuncd(T in, Ray ray)
+{
+	const auto& d = ray.d;
+	const auto& e = ray.e;
+	T x = in * d.x_ + e.x_;
+	T y = in * d.z_ + e.z_;
+	T z = in * d.y_ + e.y_;
+	T inpow = x * x + y * y * 9.0 / 4 + z * z - 1;
+	T temp = inpow*inpow*3;
+	T nx = x*z*z*z*-2 - z * y*y*z*z*9.0 / 80 + temp * 2 * x;
+	T ny = x * x*z*z*z -  z* y*z*z*9.0 / 40 + temp * 9.0 / 2 * y;
+	T nz =  x*x*z*z *-3 - z * y*y*z*27.0 / 80 + temp * z;
+	return nx * d.x_ + ny * d.y_ + nz * d.z_;
+}
+
+inline Node::Node(const Node & node, rt::CopyOp copyop)
+	:RTObject(node,copyop)
+{
+	switch (copyop)
+	{
+	case rt::SHALLOW_COPY:
+		break;
+	case rt::RECUR_SHALLOW_COPY:
+		if(node.getMaterial()) setMaterial(node.mat->cloneToSharedPtr(RECUR_SHALLOW_COPY));
+		break;
+	case rt::DEEP_COPY:
+		break;
+	default:
+		break;
+	}
+}
+
+inline bool Node::calHit(Ray ray, double t0, double t1, HitRecord * rec)
+{
+	if (hit(ray, t0, t1, rec)) {
+		if (mat) {
+			rec->mat = mat;
+			mat->setPosition(ray.d * rec->t + ray.e); //TODO position不能作为状态，而应该是作为传入参数
+		}
+		doAfterHit(ray, rec);   //TODO 这个后处理应该在顶层做，因为顶层的效果可能会覆盖底层的效果，不能让底层的效果先做掉
+		return true;
+	}
+	else return false;
+}

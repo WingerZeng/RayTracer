@@ -51,6 +51,13 @@ public:
 		return x_ * rhs.x_ + y_* rhs.y_ + z_ * rhs.z_;
 	}
 
+	Vec3 operator/(const Vec3& rhs) const {
+		return Vec3(x_ / rhs.x_ , y_ / rhs.y_ , z_ / rhs.z_);
+	}
+
+	Vec3 operator/(const double& rhs) const {
+		return Vec3(x_ / rhs, y_ / rhs, z_ / rhs);
+	}
 
 	Vec3 operator+(const Vec3& rhs)  const {
 		return Vec3(x_ + rhs.x_, y_ + rhs.y_, z_ + rhs.z_);
@@ -139,7 +146,12 @@ public:
 		return *this;
 	}
 
+	bool operator==(const Vec4& rhs) {
+		return (x_ == rhs.x_) && (y_ == rhs.y_) && (z_ == rhs.z_) && (w_ == rhs.w_);
+	}
+
 	//计算光线与材质颜色总和时使用
+	//注意：该运算符的优先级低于加法
 	Vec4 operator&(const Vec4& rhs) {
 		return Vec4(x_ * rhs.x_, y_ * rhs.y_, z_ * rhs.z_, w_ * rhs.w_);
 	}
@@ -167,4 +179,5 @@ struct HitRecord
 	double t;
 	Vec3 normal;
 	std::shared_ptr<Material> mat;
+	Vec3 localp; //击中点的局部坐标
 };

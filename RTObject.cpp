@@ -18,8 +18,6 @@ void RTObject::addChild(RTSmartPointer<RTObject> object)
 	object->setRandomSize(n_, m_);
 	object->setIteratorIndex(itIndex_);
 }
-
-
 //For Random
 
 inline void RTObject::setRandomSize(int n, int m) {
@@ -50,7 +48,6 @@ void RTObject::calRandom()
 	//jitter sample
 	if (!randomIsAble_) return;
 	randomPairs_.clear();
-	srand(time(0));
 	double nstep = 1.0 / n_;
 	double mstep = 1.0 / m_;
 	for (int i = 0; i < m_; i++) {
@@ -62,7 +59,8 @@ void RTObject::calRandom()
 	}
 	//shuffle
 	for (int i = randomPairs_.size() - 1; i >= 1;i--) {
-		int randIndex = (rand() / RAND_MAX) * (i+1);
+		int rad = rand();
+		int randIndex = (rad*1.0 / (RAND_MAX+1)) * (i+1);
 		std::iter_swap(randomPairs_.begin() + randIndex, randomPairs_.begin() + i);
 	}
 	for (const auto& child : children) {
