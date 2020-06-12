@@ -116,7 +116,7 @@ public:
 		using std::max;
 		using std::min;
 		auto hf = min(1.0, max(0.0, max(linenoise_ - 0.25, 0.25 - linenoise_)*4.5 - 0.05));
-		return (Material::getSpecular() & Color(noise_, noise_, noise_, 1)) + (Color(0.55, 0, 0, 1) & Color(1 - noise_, 1 - noise_, 1 - noise_, 1))&Color(hf, hf, hf, 1) * 0.3;
+		return (Material::getSpecular() & Color(noise_, noise_, noise_, 1)) + (Color(0.55, 0, 0, 1) & Color(1 - noise_, 1 - noise_, 1 - noise_, 1))&Color(hf, hf, hf, 1) * 0.7;
 	}
 	void setPosition(Vec3 pos) override;
 	Vec3 getNormal(Vec3 Normal) override; //管的中间突出来

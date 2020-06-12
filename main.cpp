@@ -15,10 +15,10 @@
 const int px = 1280;
 const int py = 720;
 #else
-const int px = 1020;
-const int py = 630;
-//const int px = 640;
-//const int py = 360;
+//const int px = 1020;
+//const int py = 630;
+const int px = 640;
+const int py = 360;
 #endif // HIGHQUALITY
 
 using namespace std;
@@ -67,7 +67,7 @@ int main() {
 	std::shared_ptr<Scene> scene(new Scene());
 	scene->setPixels(px, py);
 	scene->setClearColor(Vec4(0.9, 0.9, 0.9, 1.0));
-	std::shared_ptr<Camera> camera(new Camera(Vec3(5, 7, 15), Vec3(1, 1.5, 1.5), Vec3(0, 1, 0), 75.0, px * 1.0 / py));
+	std::shared_ptr<Camera> camera(new Camera(Vec3(5, 7, 15), Vec3(1, 1.5, 1.5), Vec3(0, 1, 0), 70, px * 1.0 / py));
 	//std::shared_ptr<Camera> camera(new Camera(Vec3(5, 5, 15), Vec3(1, 1.5, 1.5), Vec3(0, 1, 0), 17.0, px * 1.0 / py));
 	//std::shared_ptr<Camera> camera(new DepthCamera(Vec3(5, 5, 15), Vec3(1, 1.5, 1.5), Vec3(0, 1, 0), 45.0, px * 1.0 / py, 0.5f));
 #ifdef ANIMATION
@@ -75,7 +75,7 @@ int main() {
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.5, 0.5, 0.5, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 #else
 	std::shared_ptr<FaceLight> facelight1(new FaceLight(Vec3(5, 5, 4), Vec3(-5, -5, 0).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
-		Color(0.2, 0.2, 0.2, 1.0), Color(0.45, 0.45, 0.55, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
+		Color(0.15, 0.15, 0.15, 1.0), Color(0.40, 0.40, 0.45, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 #endif
 	std::shared_ptr<FaceLight> facelight2(new FaceLight(Vec3(5, 5, -3), Vec3(-10, -10, 10).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.45, 0.45, 0.45, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
