@@ -75,7 +75,7 @@ int main() {
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.5, 0.5, 0.5, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 #else
 	std::shared_ptr<FaceLight> facelight1(new FaceLight(Vec3(5, 5, 4), Vec3(-5, -5, 0).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
-		Color(0.15, 0.15, 0.15, 1.0), Color(0.40, 0.40, 0.45, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
+		Color(0.10, 0.10, 0.10, 1.0), Color(0.50, 0.50, 0.55, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 #endif
 	std::shared_ptr<FaceLight> facelight2(new FaceLight(Vec3(5, 5, -3), Vec3(-10, -10, 10).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.45, 0.45, 0.45, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
