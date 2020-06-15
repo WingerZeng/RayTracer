@@ -2,4 +2,4 @@
 *.pdb
 /test
 /Debug
-/64
+/x64

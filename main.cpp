@@ -8,7 +8,7 @@
 #include "types.h"
 
 //#define ANIMATION
-#define HIGHQUALITY
+//#define HIGHQUALITY
 
 #ifdef HIGHQUALITY
 const int px = 1920;
@@ -34,8 +34,8 @@ int main() {
 	//std::shared_ptr<Sphere> transsphere(new Sphere(Vec3(0, 1.2, 5), 1.2));
 	std::shared_ptr<Sphere> transsphere(new Sphere(Vec3(-2, 1.4, 5), 1.4));
 	std::shared_ptr<Ground> ground(new Ground(0));
-	std::shared_ptr<Wall_z> fwall(new Wall_z(-10));
-	std::shared_ptr<Wall_x> lwall(new Wall_x(-10));
+	std::shared_ptr<Wall_z> fwall(new Wall_z(-50));
+	std::shared_ptr<Wall_x> lwall(new Wall_x(-50));
 	//…Ë÷√≤ƒ÷ 
 	//std::shared_ptr<Material> nsmat(new Material(Color(0.6, 0.6, 0.8, 1.0), Color(0.6, 0.6, 0.8, 1.0), Color(0.9, 0.9, 0.9, 1.0), 70.0f));
 	std::shared_ptr<Material> nsmat(new PerlinNoiseNormalMaterial_Blood(Color(1.2, 1.0, 1.0, 1.0), Color(1.0, .9, .9, 1.0), Color(0.9, 0.9, 0.9, 1.0), 70.0f, 0.3));
@@ -83,7 +83,7 @@ int main() {
 	std::shared_ptr<FaceLight> facelight1(new FaceLight(Vec3(5, 5, 2), Vec3(-5, -5, 0).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.6, 0.6, 0.65, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 #endif
-	std::shared_ptr<FaceLight> facelight2(new FaceLight(Vec3(5, 5, -5), Vec3(-10, -10, 10).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
+	std::shared_ptr<FaceLight> facelight2(new FaceLight(Vec3(5, 20, -5), Vec3(-10, -10, 10).normalize(), Vec3(0, 1, 0), 5.0, 5.0,
 		Color(0.2, 0.2, 0.2, 1.0), Color(0.45, 0.45, 0.45, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
 	scene->setCamera(camera);
 	scene->setRootNode(group);
