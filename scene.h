@@ -48,7 +48,7 @@ private:
 	std::vector<std::vector<Color>> colorArray_;
 
 	//int sampleNum_=15;
-	int sampleNum_ = 6;
+	int sampleNum_ = 5;
 	int maxJump_=10;
 
 };

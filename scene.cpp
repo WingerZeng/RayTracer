@@ -192,14 +192,14 @@ Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime)
 		//漫反射材质
 		if (rec.mat->getType() & Material::NORMAL) {
 			for (const auto& light : lights) {
-				color = color + ((light->getAmbient()) & (rec.mat->getAmbient()));
+				color = color + ((light->getAmbient()) & (rec.mat->getAmbient(&rec)));
 				Ray newray;
 				newray.e = p;
 				newray.d = (light->getPosition() - p).normalize();
 				//设定一个极小值为下界，防止光线与光线出发点相交，最后一个参数设为null，不关心hit信息
 				if (!node_->calHit(newray, ZERO, (light->getPosition() - p).length(), nullptr)) {
-					color += rec.mat->getDiffuse() & light->getDiffuse() * max(0.0, rec.normal * newray.d);
-					color += rec.mat->getSpecular() & light->getSpecular() * pow((newray.d - ray.d).normalize() * rec.normal, rec.mat->getShine());
+					color += rec.mat->getDiffuse(&rec) & light->getDiffuse() * max(0.0, rec.normal * newray.d);
+					color += rec.mat->getSpecular(&rec) & light->getSpecular() * pow((newray.d - ray.d).normalize() * rec.normal, rec.mat->getShine());
 				}
 			}
 		}
@@ -226,7 +226,7 @@ Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime)
 		if (rec.mat->getType() & Material::TRANSPARENT) {
 			Ray refRay;
 			refRay.e = p;
-			Color k(1,1,1,1); //光强损失
+			Color k(1,1,1,1); //光强损失ko
 			double c; // 空气侧的cos角
 			Vec3 r = ray.d.reflact(rec.normal); //反射方向
 			//std::cout << ray.d << std::endl << rec.normal << std::endl << r << std::endl;

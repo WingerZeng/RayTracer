@@ -16,7 +16,7 @@ public:
 	double y_;
 	double z_;
 
-	Vec3 normalize() {
+	Vec3 normalize() const{
 		//std::cout << *this <<std::endl;
 		//std::cout << *this * (1 / length()) << std::endl;
 		return *this* (1 / length());
@@ -86,6 +86,10 @@ public:
 		z_ = rhs.z_;
 		return *this;
 	}
+
+	Vec3 calabs() {
+		return Vec3(abs(x_), abs(y_), abs(z_));
+	}
 };
 
 class Vec4;
@@ -97,6 +101,9 @@ public:
 		:x_(0), y_(0), z_(0), w_(0) {}
 	Vec4(double x, double y, double z ,double w)
 		:x_(x), y_(y), z_(z), w_(w) {}
+	Vec4(const Vec3 v3, double w)
+		:x_(v3.x_), y_(v3.y_), z_(v3.z_), w_(w) {}
+
 	double x_;
 	double y_;
 	double z_;

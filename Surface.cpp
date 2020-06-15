@@ -1,6 +1,7 @@
 #include "Surface.h"
 #include <algorithm>
 #include <math.h>
+#include "octree.h"
 using namespace rt;
 
 Node::Node()
@@ -19,7 +20,6 @@ Vec3 Node::getNormal(Vec3 pos)
 	else {
 		return getRawNormal(pos);
 	}
-	return Vec3();
 }
 
 int Node::setMaterial(std::shared_ptr<Material> Mat)
@@ -33,6 +33,32 @@ int Node::setMaterial(std::shared_ptr<Material> Mat)
 void Node::doAfterHit(const Ray& ray, HitRecord * rec)
 {
 }
+
+BoxNode::BoxNode(BoundBox_t bound)
+{
+	box_[0] = bound[0];
+	box_[1] = bound[1];
+}
+
+bool BoxNode::calHit(const Ray & ray, double t0, double t1, HitRecord * rec)
+{
+	double rt0, rt1;
+	if (algorithm::hitBox(box_, ray, t0, t1, &rt0, &rt1)) {
+		//rec->t = (rt0 + rt1) / 2;  //不能将中间的点认为是击中点，否则判断阴影的时候会从里面射出来，然后自相交
+		//将光线交到立方体的外接球上
+		double r = (box_[0] - box_[1]).length() / 2 * 2.5;
+		double dist = ((box_[0] + box_[1]) / 2 - ray.e).length();
+		double dist2 = ray.d.normalize() * ((box_[0] + box_[1]) / 2 - ray.e);
+		double dist3 = sqrt(dist*dist - dist2 * dist2);
+		double dist4 = dist2 - sqrt(r*r - dist3 * dist3);
+		rec->t = dist4 / ray.d.length();
+		rec->t = rt0 - (box_[0] - box_[1]).length() / (ray.d.length());
+		return true;
+	}
+	return false;
+}
+
+ImplicitSurfaceOctree* HeartShape::ptree = nullptr;
 
 Sphere::Sphere(const Sphere & sphere, rt::CopyOp copyop)
 	:Drawable(sphere,copyop),center_(sphere.center_),radius_(sphere.radius_)
@@ -201,61 +227,111 @@ void Drawable::doAfterHit(const Ray& ray, HitRecord * rec)
 HeartShape::HeartShape(const HeartShape & heartshape, rt::CopyOp copyop)
 	:Drawable(heartshape,copyop),center_(heartshape.center_),scale_(heartshape.scale_)
 {
-
+	buildTree();
 }
 
 Vec3 HeartShape::getRawNormal(Vec3 pos)
 {
 	//梯度方向
+	//double ds = 1e-6;
+	//pos = (pos - center_) * (1.0/scale_);
+	//double of = heartImplicitFunc(pos);
+	//double xf = heartImplicitFunc(pos+Vec3(ds,0,0));
+	//double yf = heartImplicitFunc(pos + Vec3(0,ds,0));
+	//double zf = heartImplicitFunc(pos + Vec3(0, 0, ds));
+
+	//n = Vec3((xf - of) / ds, (yf - of) / ds, (zf - of) / ds);
+
 	Vec3 n;
 	pos = (pos - center_) * (1.0/scale_);
 	double x = pos.x_;
 	double y = pos.z_;
 	double z = pos.y_;
-	double temp = 3*pow(x * x + 9.0 / 4 * y*y + z * z - 1,2);
+	double temp = x * x + y * y * 9.0 / 4 + z * z - 1;
+	temp = 3 * temp*temp;
+	temp = std::max(temp, 0.5); //在z=0时，原函数的梯度为0，0，0,   为了避免该情况，需要提高temp值
 	n.x_ = -2 * x*z*z*z + temp * 2 * x;
-	n.y_ = 9.0 / 40 * y*z*z*z + temp * 9.0/2 * y;
-	n.z_ = -3 * x*x*z*z - 27.0 / 80 * y*y*z*z + temp * z;
+	n.z_ = - 9.0 / 40 * y*z*z*z + temp * 9.0/2 * y;
+	n.y_ = -3 * x*x*z*z - 27.0 / 80 * y*y*z*z + 2 * temp * z;
+	if((1 + n.normalize().y_)<0.03 && z>-0.9) 
+		std::cout << n << ' ' << pos << ' '<< heartImplicitFunc(Vec3(x,z,y)) << ' ' << temp <<std::endl;
 	return n.normalize();
 }
 
+
 bool HeartShape::hit(const Ray& ray, double t0, double t1, HitRecord * rec)
 {
-	double root;
-	double dist = (center_ - ray.e).length();
-	ray.d = ray.d * (1.0/scale_);
-	ray.e = (ray.e - center_) * (1.0 / scale_);
+	Ray newray;
+	newray.d = ray.d * (1.0 / scale_);
+	newray.e = (ray.e - center_) * (1.0 / scale_);
+	bool ret = ptree->hit(newray, t0, t1, rec);
+	//if (ret) std::cout << heartImplicitFunc(newray.e + newray.d * rec->t) << std::endl;
+	if (ret) rec->localp = newray.e + newray.d * rec->t;
+	return ret;
 
-	//static ImplicitSurfaceOctree* ptree = nullptr;
-	//if (!ptree) {
-	//	Vec3 bound[2];
-	//	bound[0] = Vec3(-2, -2, -2);
-	//	bound[1] = Vec3(2, 2, 2);
-	//	ptree = new ImplicitSurfaceOctree(bound, std::bind(&HeartShape::heartImplicitFunc, std::placeholders::_1));
-	//	ptree->build();
+	//数值计算求交的方式已经废弃
+
+	//Ray newray;
+	//newray.d = ray.d * (1.0 / scale_);
+	//newray.e = (ray.e - center_) * (1.0 / scale_);
+	//double root;
+	//auto f = std::bind(&HeartShape::heartFunc<algorithm::IntervalArith>, std::placeholders::_1, newray);
+	//auto fd = std::bind(&HeartShape::heartFuncd<algorithm::IntervalArith>, std::placeholders::_1, newray);
+	//double dist1 = ((newray.e).length()-2) / (newray.d).length();
+	//double dist2 = ((newray.e).length()+2) / (newray.d).length();
+	//dist1 = std::max(dist1,t0);
+	//dist2 = std::min(dist2, t1);
+
+	//if (algorithm::calMinRoots(f, fd, dist1, dist2, &root) == 0 && (root>=t0&&root<=t1)) {
+	//	rec->t = root;
+	//	return true;
 	//}
+	//return false;
+}
 
- //	return ptree->hit(ray, t0, t1, rec);
-	auto f = std::bind(&HeartShape::heartFunc<algorithm::IntervalArith>, std::placeholders::_1, ray);
-	auto fd = std::bind(&HeartShape::heartFuncd<algorithm::IntervalArith>, std::placeholders::_1, ray);
-	double dist1 = ((ray.e).length()-2) / (ray.d).length();
-	double dist2 = ((ray.e).length()+2) / (ray.d).length();
-	dist1 = std::max(dist1,t0);
-	dist2 = std::min(dist2, t1);
-
-	if (algorithm::calMinRoots(f, fd, dist1, dist2, &root) == 0 && (root>=t0&&root<=t1)) {
-		rec->t = root;
-		return true;
+void HeartShape::buildTree()
+{
+	//使用八叉树空间分片形式求交点
+	if (!ptree) {
+		Point_t seedp[2]{ Vec3(0,0,0),Vec3(2,0,0) };
+		ptree = new ImplicitSurfaceOctree(HeartShape::heartImplicitFunc, seedp);
+		ptree->build();
 	}
-	return false;
 }
 
 int AbstructNode::getBoundBox(Vec3 box[2])
 {
 	if (dirtyBound_) {
-		computeBox();
+		computeBoundBox();
 	}
 	box[0] = box_[0];
 	box[1] = box_[1];
 	return 0;
+}
+
+double SurfaceOfGenus2Function::ImplicitFunc(Vec3 pos)
+{
+	double x = pos.x_;
+	double y = pos.z_;
+	double z = pos.y_;
+	double temp = x * x + y * y;
+	return 2 * y *(y*y - 3 * x*x)*(1 - z * z) + temp * temp - (9 * z*z - 1)*(1 - z * z);
+}
+
+Vec3 SurfaceOfGenus2Function::getSeedPoint(int index)
+{
+	if (index == 0) return Vec3(0, 0, 0);
+	else return Vec3(0, 0.9, 0);
+}
+
+Vec3 SurfaceOfGenus2Function::getNormal(Vec3 pos)
+{
+	double x = pos.x_;
+	double y = pos.z_;
+	double z = pos.y_;
+	Vec3 n;
+	n.x_ = -12 * x * y * (1 - z * z) + 4 * (x*x + y * y)*x;
+	n.z_ = 6 * (1 - z * z)*(y*y - x * x) + 4 * (x*x + y * y)*y;
+	n.y_ = 2 * y *(y*y - 3 *x*x)*-2 * z + 36 * z *z *z - 20 * z;
+	return n.normalize();
 }

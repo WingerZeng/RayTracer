@@ -3,12 +3,15 @@
 #include <math.h>
 #include <assert.h>
 #include <vector>
+#include <array>
 #include <algorithm>
 #include <functional>
 #include "types.h"
 #include "RTObject.h"
 
 namespace algorithm {
+	inline Vec3 getBoundPoint(int index, const BoundBox_t bound);
+
 	inline void randFromDisk(double* x, double* y) {
 		do {
 			*x = (rand() * 1.0 / RAND_MAX - 0.5) * 2;
@@ -56,7 +59,7 @@ namespace algorithm {
 
 			int rN = N;
 			auto& rP = P;
-			auto fai = [rN, rP](int t) {
+			auto fai = [&rN, &rP](int t) {
 				int m = t % rN;
 				return rP[m >= 0 ? m : rN + m];
 			};
@@ -120,14 +123,11 @@ namespace algorithm {
 
 	typedef std::function<IntervalArith(IntervalArith)> IntervalFunc;
 	typedef std::function<double(double)> DoubleFunc;
-	const double PRECISE = 10e-5;
+	const double PRECISE = 10e-8;
 
-	inline int calSingleRoot(IntervalFunc ifunc, double t1, double t2, double* root) //二分法求根
+	inline int calSingleRoot(DoubleFunc ifunc, double t1, double t2, double* root) //二分法求根
 	{
-		auto func = [ifunc](double d) {
-			return ifunc(d).a();
-		};
-		double f1 = func(t1), f2 = func(t2);
+		double f1 = ifunc(t1), f2 = ifunc(t2);
 		if (f1 == 0.0) {
 			*root = t1;
 			return 0;
@@ -139,7 +139,7 @@ namespace algorithm {
 		if (f1*f2 > 0.0)
 			return -1;
 		double tm = (t1 + t2) / 2;
-		double fm = func(tm);
+		double fm = ifunc(tm);
 		while (abs(fm) > PRECISE) {
 			if (f1*fm < 0) {
 				t2 = tm;
@@ -150,10 +150,18 @@ namespace algorithm {
 				f1 = fm;
 			}
 			tm = (t1 + t2) / 2;
-			fm = func(tm);
+			fm = ifunc(tm);
 		}
 		*root = tm;
 		return 0;
+	}
+
+	inline int calSingleRoot(IntervalFunc ifunc, double t1, double t2, double* root) //二分法求根
+	{
+		auto func = [ifunc](double d) {
+			return ifunc(d).a();
+		};
+		return calSingleRoot(func, t1, t2, root);
 	}
 
 	//求解函数在给定范围内的最小根, 输入：函数、导函数、下界、上界
@@ -185,18 +193,95 @@ namespace algorithm {
 	inline bool hitBox(Vec3 bound[2], Ray ray, double t0, double t1, HitRecord* rec) {
 		Vec3 vt0 = (bound[0] - ray.e) / ray.d;
 		Vec3 vt1 = (bound[1] - ray.e) / ray.d;
-		std::vector<double> tmin{ std::min(vt0.x_,vt1.x_),std::min(vt0.y_,vt1.y_),std::min(vt0.z_,vt1.z_) };
-		std::vector<double> tmax{ std::max(vt0.x_,vt1.x_),std::max(vt0.y_,vt1.y_),std::max(vt0.z_,vt1.z_) };
-		tmin.push_back(t0);
-		tmax.push_back(t1);
-		if (*std::max_element(tmin.begin(), tmin.end()) <= *std::max_element(tmin.begin(), tmin.end())) {
-			if (rec) rec->t = *std::max_element(tmin.begin(), tmin.end());
+		double tmin[4]{ std::min(vt0.x_,vt1.x_),std::min(vt0.y_,vt1.y_),std::min(vt0.z_,vt1.z_),t0 };
+		double tmax[4]{ std::max(vt0.x_,vt1.x_),std::max(vt0.y_,vt1.y_),std::max(vt0.z_,vt1.z_),t1 };
+		double r0 = *std::max_element(tmin, tmin + 4);
+		double r1 = *std::min_element(tmax, tmax + 4);
+		if (r0 <= r1) {
+			if (rec) rec->t = r0;
 			return true;
 		}
 		return false;
 	}
 
-	inline Vec3 getBoundPoint(int index, Vec3 bound[2]) {
+	//返回射线击中包围盒的范围
+	inline bool hitBox(const BoundBox_t bound, Ray ray, double t0, double t1, double* rt0, double* rt1) {
+		Vec3 vt0 = (bound[0] - ray.e) / ray.d;
+		Vec3 vt1 = (bound[1] - ray.e) / ray.d;
+		double tmin[4]{ std::min(vt0.x_,vt1.x_),std::min(vt0.y_,vt1.y_),std::min(vt0.z_,vt1.z_),t0 };
+		double tmax[4]{ std::max(vt0.x_,vt1.x_),std::max(vt0.y_,vt1.y_),std::max(vt0.z_,vt1.z_),t1 };
+		double r0 = *std::max_element(tmin, tmin + 4);
+		double r1 = *std::min_element(tmax, tmax + 4);
+		if (r0<=r1) {
+			*rt0 = r0;
+			*rt1 = r1;
+			return true;
+		}
+		return false;
+	}
+
+	enum BoxFace {
+		FRONT = 0,   //On xOz plane. Normal is -y; 
+		TOP,  
+		LEFT,
+		RIGHT,
+		DOWN, //On xOy plane. Normal is -z;
+		BACK,
+	};
+
+	inline BoxFace getBoundOppoFace(BoxFace face) {
+		return BoxFace(5 - face);
+	}
+
+	inline void getAdjBox(BoundBox_t box, BoxFace face, BoundBox_t adjbox) {
+		switch (face)
+		{
+		case algorithm::FRONT:
+			adjbox[0] = box[0] - Vec3(0, box[1].y_ - box[0].y_, 0);
+			adjbox[1] = getBoundPoint(5, box);
+			break;
+		case algorithm::TOP:
+			adjbox[0] = getBoundPoint(4, box);
+			adjbox[1] = box[1] + Vec3(0, 0, box[1].z_ - box[0].z_);
+			break;
+		case algorithm::LEFT:
+			adjbox[0] = box[0] - Vec3(box[1].x_ - box[0].x_, 0, 0);
+			adjbox[1] = getBoundPoint(7, box);
+			break;
+		case algorithm::RIGHT:
+			adjbox[0] = getBoundPoint(1, box);
+			adjbox[1] = box[1] + Vec3(box[1].x_ - box[0].x_, 0, 0);
+			break;
+		case algorithm::DOWN:
+			adjbox[0] = box[0] - Vec3(0, 0, box[1].z_ - box[0].z_);
+			adjbox[1] = getBoundPoint(2, box);
+			break;
+		case algorithm::BACK:
+			adjbox[0] = getBoundPoint(3, box);
+			adjbox[1] = box[1] + Vec3(0, box[1].y_ - box[0].y_, 0 );
+			break;
+		}
+	}
+
+	inline std::array<int,4> getBoundFacePoint(BoxFace face) {
+		switch (face)
+		{
+		case algorithm::FRONT:
+			return { 0,1,5,4 };
+		case algorithm::BACK:
+			return { 3,2,6,7 };
+		case algorithm::TOP:
+			return { 4,5,6,7 };
+		case algorithm::DOWN:
+			return { 0,1,2,3 };
+		case algorithm::LEFT:
+			return { 3,0,4,7 };
+		case algorithm::RIGHT:
+			return { 1,2,6,5 };
+		}
+	}
+
+	inline Vec3 getBoundPoint(int index, const BoundBox_t bound) {
 		int ix;
 		int iy;
 		switch (index % 4)
@@ -212,8 +297,8 @@ namespace algorithm {
 			ix = iy = 1;
 			break;
 		case 3:
-			ix = 1;
-			iy = 0;
+			ix = 0;
+			iy = 1;
 			break;
 		}
 		int iz = (index >> 2) & 1;

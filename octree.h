@@ -3,24 +3,27 @@
 #include <list>
 #include "types.h"
 #include "definitions.h"
-#include "Surface.h"
+#include "algorithms.h"
+
+class AbstructNode;
 class OctreeNode {
 public:
 	OctreeNode(Vec3 bound[2], int maxSize);
 	virtual ~OctreeNode();
-	inline Vec3 getPoint(int index);
-	inline Vec3 getSize();
-	virtual bool hit(const Ray& ray, double t0,double t1, HitRecord* rec);
-	bool isLeaf();
-	std::shared_ptr<OctreeNode> getChild(int index) { return children_[index]; }
-	void getChildBound(int childindex, Vec3 bound[2]);
-
+	inline Vec3 getPoint(int index) const;
+	inline void getBound(BoundBox_t bound) const;
+	inline Vec3 getSize() const;
+	virtual bool hit(const Ray& ray, double t0,double t1, HitRecord* rec) const;
+	bool isLeaf() const;
+	std::shared_ptr<OctreeNode> getChild(int index) const { return children_[index]; }
+	void getChildBound(int childindex, Vec3 bound[2]) const;
+	
 	//不会检查对象在该Node中是否合理，需要在插入前检查
 	void insertObject(std::shared_ptr<AbstructNode> objects_);
 protected:
 	void createChildren();
 
-	static const int OverlapTolerance = 2; //如果目标的包围盒覆盖超过OverlapTolerance个子节点，则目标不被保存进子节点，而存在该节点中
+	static const int OverlapTolerance = 3; //如果目标的包围盒覆盖超过OverlapTolerance个子节点，则目标不被保存进子节点，而存在该节点中
 
 	Vec3 bound_[2];
 	unsigned int maxSize_;
@@ -44,34 +47,39 @@ protected:
 class Octree 
 {
 public:
-	Octree(int maxSize = 64);
+	Octree(int maxSize = 128, BoundBox_t bound = nullptr);
 	virtual ~Octree() {};
-	virtual bool hit(const Ray& ray, double t0, double t1, HitRecord* rec);
+	int setBoundBox(BoundBox_t bound);
+	virtual bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) const;
+	virtual int build();
+	void insertObject(std::shared_ptr<AbstructNode> objects_);
 protected:
-	unsigned int maxSize_;
+	const unsigned int maxSize_;
+	BoundBox_t bound_;
 	std::shared_ptr<OctreeNode> root_;
 };
 
-class ImplicitSurfaceOctree : Octree 
+//TODO 要把Surface离散成三角面片，否则边界有一定厚度
+class ImplicitSurfaceOctree : public Octree 
 {
 public:
-	ImplicitSurfaceOctree(Vec3 bound[2], StdImpicitFunc func);
-	inline int setMinSize(double minsize) { minSize_ = minsize; };
-	virtual bool hit(const Ray& ray, double t0, double t1, HitRecord* rec);
-	void build();
+	ImplicitSurfaceOctree(StdImpicitFunc func, Point_t seedPoints[2], double minSize=3e-3);
+	int build() override;
+	//bool hit(const Ray& ray, double t0, double t1, HitRecord* rec) override;
 protected:
 	bool includeSurface_ = true;
-	double minSize_ = 10e-8;
+	double minSize_;
 	Vec3 bound_[2];
+	Point_t seedPoints_[2];
 	StdImpicitFunc sfunc_;
 };
 /*------------inline def------------------*/
 
-inline Vec3 OctreeNode::getSize() {
+inline Vec3 OctreeNode::getSize() const {
 	return bound_[1] - bound_[0];
 }
 
-inline void OctreeNode::getChildBound(int childindex, Vec3 bound[2])
+inline void OctreeNode::getChildBound(int childindex, Vec3 bound[2]) const
 {
 	if (childindex < 0) return;
 	switch (childindex%8)
@@ -112,7 +120,7 @@ inline void OctreeNode::getChildBound(int childindex, Vec3 bound[2])
 }
 
 
-inline Vec3 OctreeNode::getPoint(int index)
+inline Vec3 OctreeNode::getPoint(int index) const
 {
 	return algorithm::getBoundPoint(index, bound_);
 }
@@ -132,3 +140,9 @@ inline Vec3 OctreeNode::getPoint(int index)
 //	else
 //		return true;
 //}
+
+inline void OctreeNode::getBound(BoundBox_t bound) const
+{
+	bound[0] = bound_[0];
+	bound[1] = bound_[1];
+}

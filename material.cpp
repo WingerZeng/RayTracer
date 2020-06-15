@@ -12,7 +12,7 @@ Material::Material(Color amb, Color dif, Color spe, Color mir, double shi)
 }
 
 Material::Material(Color a, double nr)
-	: a_(a), nr_(nr)
+	:a_(a),nr_(nr)
 {
 	type = TRANSPARENT;
 }
