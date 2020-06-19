@@ -88,8 +88,8 @@ int main() {
 #endif
 	//std::shared_ptr<FaceLight> facelight2(new FaceLight(Vec3(5, 20, -2), Vec3(-10, -10, 10).normalize(), Vec3(0, 1, 0), 15.0, 15.0,
 	//	Color(0.2, 0.2, 0.2, 1.0), Color(1, 1, 1, 1.0), Color(0.8, 0.8, 0.8, 1.0)));
-	std::shared_ptr<SphereLight> light1(new SphereLight(Vec3(5, 8, -4), 0.6, Color(60, 60, 60, 1)));
-	std::shared_ptr<SphereLight> light2(new SphereLight(Vec3(-3,8,4),0.6,Color(80,80,80,1)));
+	std::shared_ptr<SphereLight> light1(new SphereLight(Vec3(4, 16, -1),2.5,Color(8, 8, 8, 1)));
+	std::shared_ptr<SphereLight> light2(new SphereLight(Vec3(-5,8,4),0.6,Color(30, 30, 30, 1)));
 	scene->setCamera(camera);
 	scene->setRootNode(group);
 	scene->addLight(light1);
@@ -123,7 +123,7 @@ int main() {
 	}
 	avi->Save();
 #else
-	scene->runParallelly(11);
+	scene->runParallelly(2);
 
 	if (0 != _access("./test", 0)) {
 		_mkdir("./test");

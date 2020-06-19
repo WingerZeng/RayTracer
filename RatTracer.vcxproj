@@ -74,8 +74,8 @@
     <LibraryPath>./lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>I:\programpros\RayTracer\include;C:\Program Files (x86)\Microsoft SDKs\MPI\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>I:\programpros\RayTracer\lib;C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,7 +97,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>opencv_world343.lib;msmpi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world343.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,6 +150,7 @@
     <ClInclude Include="scene.h" />
     <ClInclude Include="singleton.h" />
     <ClInclude Include="Surface.h" />
+    <ClInclude Include="tonereproductionmethod.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +165,7 @@
     <ClCompile Include="RTObject.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="Surface.cpp" />
+    <ClCompile Include="tonereproductionmethod.cpp" />
     <ClCompile Include="types.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -52,8 +52,8 @@ void RTObject::calRandom()
 	double mstep = 1.0 / m_;
 	for (int i = 0; i < m_; i++) {
 		for (int j = 0; j < n_; j++) {
-			double nrand = nstep * rand() / RAND_MAX;
-			double mrand = mstep * rand() / RAND_MAX;
+			double nrand = nstep * rand() / (RAND_MAX + 1);
+			double mrand = mstep * rand() / (RAND_MAX + 1);
 			randomPairs_.push_back(std::make_pair(j*nstep+nrand,i*mstep+mrand));
 		}
 	}

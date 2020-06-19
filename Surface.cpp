@@ -162,12 +162,18 @@ bool Group::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 	bool flag = 0;
 	double t = t1;
 	for (const auto& child : children) {
-		double tempt;
-		HitRecord temprec;
-		if (child->calHit(ray, t0, t1, &temprec)) { //此处调用calHit，会导致重复计算纹理位置
-			flag = true;
-			if(rec) *rec = temprec;
-			t1 = temprec.t;
+		if (rec) {
+			if (child->calHit(ray, t0, t1, rec)) { //此处调用calHit，会导致重复计算纹理位置
+				flag = true;
+				t1 = rec->t;
+			}
+		}
+		else {
+			HitRecord tempt;
+			if (child->calHit(ray, t0, t1, &tempt)) { //此处调用calHit，会导致重复计算纹理位置
+				flag = true;
+				t1 = tempt.t;
+			}
 		}
 	}
 	if (flag) return true;
@@ -221,7 +227,7 @@ bool Wall_x::hit(const Ray& ray, double t0, double t1, HitRecord* rec)
 
 void Drawable::doAfterHit(const Ray& ray, HitRecord * rec)
 {
-	rec->normal = getNormal(ray.e + ray.d * rec->t);
+	if(rec) rec->normal = getNormal(ray.e + ray.d * rec->t);
 }
 
 HeartShape::HeartShape(const HeartShape & heartshape, rt::CopyOp copyop)

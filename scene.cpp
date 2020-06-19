@@ -6,6 +6,7 @@
 #include "bmpgenerator.h"
 #include "algorithms.h"
 #include "cudaRayTracer.h"
+#include "tonereproductionmethod.h"
 using namespace std;
 using namespace rt;
 
@@ -99,12 +100,13 @@ void Scene::run(int x, int y)
 		int n = sampleNum_;
 		Ray ray;
 		Color color;
+		
 		for (int i = 0; i < n * n; i++) {
 			setIteratorIndex(i);
 			std::pair<double, double> pair;
 			getRandomPair(&pair);
 			ray = camera_->getRay((pair.first + x * 1.0) / px_, (pair.second + y * 1.0) / py_);
-			color = color + rayColor(ray, 0, INFINITE);
+			color = color + SqrtMethod().reproduction(rayColor(ray, 0, INFINITE));
 		}
 		colorArray_[x][y] = color * (1.0 / (n * n));
 		colorArray_[x][y].regularize();
@@ -221,6 +223,7 @@ Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime, bool E
 					double prosibility;
 					Vec3 normal;
 					Vec3 lightpos = light->getPosition(&rec,&normal,&prosibility);
+					if (prosibility > INFINITE) continue;
 					Ray newray;
 					double dist = (lightpos - p).length();
 					newray.e = p;
@@ -232,11 +235,15 @@ Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime, bool E
 					if (!group_->calHit(newray, ZERO, dist-ZERO, nullptr)) {
 						//TODO 此处后面一项是双边辐射函数，后续要作为material的虚函数返回
 						color = color + (c & light->getDiffuse() *(dot)*(dot2)*(1/prosibility/dist/dist));
+						if (!(color.x_ >= -0.01 && color.y_ >= -0.01 && color.z_ >= -0.01)) {
+							std::cout << "COLOR" <<color << std::endl;
+							std::cout << "C" << c << std::endl;
+							std::cout << "light" << light->getDiffuse() << std::endl;
+							std::cout << "prosibility" << prosibility << std::endl;
+						}
 					}
 				}
-				//std::cout << color;
-				color = rec.mat->getEmission()*E + color + (rec.mat->getColor() & rayColor(Ray{ p, d }, ZERO, INFINITE, jumpTime + 1, 0));
-				//std::cout << color;
+				color = color + rec.mat->getEmission()*E + (rec.mat->getColor() & rayColor(Ray{ p, d }, ZERO, INFINITE, jumpTime + 1, 0));
 			}
 			if (rec.mat->getType() & Material::SPECULAR) {
 				Ray mirray;
@@ -365,7 +372,6 @@ Color Scene::rayColor(const Ray& ray, double t0, double t1, int jumpTime, bool E
 				}
 			}
 		}
-		//assert(color.x_ >= 0 && color.y_ >= 0 && color.z_ >= 0);
 		return color;
 	}
 	else {

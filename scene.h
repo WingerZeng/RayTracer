@@ -49,7 +49,7 @@ private:
 	std::vector<std::vector<Color>> colorArray_;
 
 	//int sampleNum_=15;
-	int sampleNum_ = 50;
+	int sampleNum_ = 2;
 	int maxJump_=10;
 	int rusJump_ = 5; //depth to start russian roulette
 

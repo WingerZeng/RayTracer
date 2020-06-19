@@ -272,7 +272,7 @@ inline Node::Node(const Node & node, rt::CopyOp copyop)
 inline bool Node::calHit(const Ray& ray, double t0, double t1, HitRecord * rec)
 {
 	if (hit(ray, t0, t1, rec)) {
-		if (mat) {
+		if (mat&&rec) {
 			rec->mat = mat;
 			mat->setPosition(ray.d * rec->t + ray.e); //TODO position不能作为状态，而应该是作为传入参数
 		}

@@ -142,9 +142,16 @@ Vec3 SphereLight::getPosition(HitRecord * rec, Vec3 * normal, double * p)
 	double ru = uv.first, rv = uv.second;
 	Vec3 ppos = rec->ray.d * rec->t+ rec->ray.e;
 	Vec3 dir = (pos_ - ppos);
+	if (abs(dir.length() - radius_) < ZERO) { //如果是光源上本身的点，不考虑直射光
+		if (p) *p = INFINITE*1.1;
+		return Vec3(0, 0, 0);
+	}
 	//建立坐标系
 	Vec3 w = dir.normalize(), u = ((fabs(w.x_) > 0.1 ? Vec3(0, 1, 0) : Vec3(1, 0, 0)) ^ w).normalize(), v = (w ^ u).normalize();
 	double cosmax = sqrt(1 - radius_ * radius_ / (dir*dir));
+	if (cosmax >= 1 - ZERO) {
+		return Vec3(0, 0, 0);
+	}
 	//选取随机向量
 	double cos_a = 1 - ru + ru * cosmax;
 	double sin_a = sqrt(1 - cos_a * cos_a);
@@ -160,6 +167,18 @@ Vec3 SphereLight::getPosition(HitRecord * rec, Vec3 * normal, double * p)
 	//计算概率
 	if (p) {
 		*p = nl*(-lightDir) / (2 * PI*(1 - cosmax)) / temprec.t / temprec.t;
+		//if (*p < 0) {
+		//	std::cout << *p << std::endl;
+		//	std::cout << nl << std::endl;
+		//	std::cout << lightDir << std::endl;
+		//	std::cout << dir * dir << std::endl;
+		//	std::cout << cosmax << std::endl;
+		//	std::cout << cos_a << std::endl;
+		//	std::cout << ppos << std::endl;
+		//	std::cout << pos_ << std::endl;
+		//	std::cout << nl * (-lightDir) << std::endl;
+		//	std::cout << uv.first << std::endl;
+		//}
 	}
 	return hitp;
 }
