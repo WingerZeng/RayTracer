@@ -12,6 +12,17 @@
 namespace algorithm {
 	inline Vec3 getBoundPoint(int index, const BoundBox_t bound);
 
+	inline Vec3 firstIntersection2Sphere(Ray ray, const Vec3& center, double radius, double& length) {
+		Vec3 dir = (center - ray.e);
+		double dist = dir.length();
+		double cos = ray.d * dir.normalize();
+		double coslen = dist * cos;
+		double sinlen = dist * sqrt(1 - cos * cos);
+		double dlen = sqrt(radius*radius - sinlen * sinlen);
+		length = coslen - dlen;
+		return ray.e + ray.d * length;
+	}
+
 	inline double rand01() {
 		return rand()*1.0 / RAND_MAX;
 	}
