@@ -11,6 +11,11 @@ Material::Material(Color amb, Color dif, Color spe, Color mir, double shi)
 	type = Type(SPECULAR | NORMAL);
 }
 
+Material::Material(Color emission, Color color, Material::Type tp)
+	:type(Type(tp|MONTECARLO)),emission(emission),diffuse(color)
+{
+}
+
 Material::Material(Color a, double nr)
 	:a_(a),nr_(nr)
 {
@@ -21,6 +26,7 @@ Material::Material(const Material & mat, rt::CopyOp copyop)
 	:RTObject(mat,copyop)
 {
 	type = mat.type;
+	emission = mat.emission;
 	ambient = mat.ambient;
 	diffuse = mat.diffuse;
 	specular = mat.specular;
@@ -29,6 +35,15 @@ Material::Material(const Material & mat, rt::CopyOp copyop)
 	blur = mat.blur;
 	a_ = mat.a_; 
 	nr_ = mat.nr_;
+}
+
+void Material::setMonteCarlo(Color color, Color emission)
+{
+	type = Type(type | MONTECARLO);
+	if(color.x_ >= 0)
+		diffuse = color;
+	if(emission.x_ >= 0)
+		this->emission = emission;
 }
 
 PerlinNoiseNormalMaterial_Blood::PerlinNoiseNormalMaterial_Blood(const PerlinNoiseNormalMaterial_Blood & mat, rt::CopyOp copyop)

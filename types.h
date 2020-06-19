@@ -159,16 +159,20 @@ public:
 
 	//计算光线与材质颜色总和时使用
 	//注意：该运算符的优先级低于加法
-	Vec4 operator&(const Vec4& rhs) {
+	Vec4 operator&(const Vec4& rhs) const {
 		return Vec4(x_ * rhs.x_, y_ * rhs.y_, z_ * rhs.z_, w_ * rhs.w_);
 	}
 
 	//对颜色进行规约化
 	Vec4& regularize() {
 		if (this->x_ > 1.0) x_ = 1.0;
+		else if (this->x_ < 0) x_ = 0;
 		if (this->y_ > 1.0) y_ = 1.0;
+		else if (this->y_ < 0) y_ = 0;
 		if (this->z_ > 1.0) z_ = 1.0;
+		else if (this->z_ < 0) z_ = 0;
 		if (this->w_ > 1.0) w_ = 1.0;
+		else if (this->w_ < 0) w_ = 0;
 		return *this;
 	}
 };
@@ -187,4 +191,5 @@ struct HitRecord
 	Vec3 normal;
 	std::shared_ptr<Material> mat;
 	Vec3 localp; //击中点的局部坐标
+	Ray ray;
 };

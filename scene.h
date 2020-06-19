@@ -31,12 +31,13 @@ public:
 	//Must be called after called run()
 	int saveToBpm(const char* filaname);
 
-	Color rayColor(const Ray& ray, double t0, double t1, int jumptime = 0);
+	Color rayColor(const Ray& ray, double t0, double t1, int jumptime = 0, bool E = 1);
 	//__global__ void rayColor(const Ray& ray, double t0, double t1, int jumptime, Color& cout);
 
 private:
 	inline void setPixelColor(int x, int y, Color color);
 
+	std::shared_ptr<Group> group_; //include root node and light geometries
 	std::shared_ptr<Node> node_;
 	std::shared_ptr<Camera> camera_;
 	std::vector<std::shared_ptr<Light>> lights;
@@ -48,8 +49,9 @@ private:
 	std::vector<std::vector<Color>> colorArray_;
 
 	//int sampleNum_=15;
-	int sampleNum_ = 5;
+	int sampleNum_ = 50;
 	int maxJump_=10;
+	int rusJump_ = 5; //depth to start russian roulette
 
 };
 void getRayColor(Scene* scene, std::vector<Ray> ray, double t0, double t1, int jumptime, std::vector<Color>& color);

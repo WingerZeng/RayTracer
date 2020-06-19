@@ -1,4 +1,6 @@
 #include "light.h"
+#include "Surface.h"
+#include "material.h"
 Light::~Light()
 {
 }
@@ -32,13 +34,21 @@ Color Light::getSpecular()
 	return s_;
 }
 
-Vec3 Light::getPosition()
+Vec3 Light::getPosition(HitRecord* rec, Vec3* normal, double* p)
 {
+	if(p) *p = 1;
 	return pos_;
 }
 
+void Light::setMonteCarloMat()
+{
+	if (auto p = getGeometry()) {
+		p->setMaterial(std::shared_ptr<Material>(new Material(getDiffuse(), Color(), Material::NORMAL)));
+	}
+}
+
 FaceLight::FaceLight(Vec3 pos, Vec3 normal, Vec3 up, double width, double height, Color ambient, Color diffuse, Color specular)
-	:Light(pos,ambient,diffuse,specular),right_(up^normal),up_(up),width_(width),height_(height)
+	:Light(pos,ambient,diffuse,specular),right_(up^normal),up_(up),width_(width),height_(height),normal_(normal.normalize())
 {
 	setRandomEnabled(true);
 	uoff_ = 0;
@@ -49,6 +59,7 @@ FaceLight::FaceLight(const FaceLight & light, rt::CopyOp copyop)
 	:Light(light,copyop)
 {
 	uoff_	=light.uoff_;
+	normal_ = light.normal_;
 	voff_ = light.voff_;
 	right_ = light.right_;
 	up_ = light.up_;
@@ -62,12 +73,14 @@ FaceLight::FaceLight(const FaceLight & light, rt::CopyOp copyop)
 //	voff_ = v-0.5;
 //}
 
-Vec3 FaceLight::getPosition()
+Vec3 FaceLight::getPosition(HitRecord* rec, Vec3* normal, double* p)
 {
 	std::pair<double, double> uv;
 	getRandomPair(&uv);
 	Vec3 pos = Light::getPosition();
 	pos += right_ * (uv.first-0.5) * width_ + up_ * (uv.second-0.5) * height_;
+	if(p) *p = 1.0 / width_ / height_;
+	if (normal) *normal = normal_;
 	return pos;
 }
 
@@ -85,10 +98,68 @@ MovableFaceLight::MovableFaceLight(const MovableFaceLight & light, rt::CopyOp co
 	orginPos_ = light.orginPos_;
 }
 
-Vec3 MovableFaceLight::getPosition()
+Vec3 MovableFaceLight::getPosition(HitRecord* rec, Vec3* normal, double* p)
 { 
 	//绕z轴旋转
 	pos_.x_ = sin(getTime()*2*3.1415926)*radius_;
 	pos_.z_ = cos(getTime()*2*3.1415926)*radius_;
-	return FaceLight::getPosition();
+	return FaceLight::getPosition(rec,normal,p);
+}
+
+SphereLight::SphereLight(Vec3 pos, double radius, Color emission)
+	:Light(pos,emission,emission,emission),radius_(radius)
+{
+	setRandomEnabled(true);
+	sphere_.reset(new Sphere(pos, radius));
+	std::shared_ptr<Material> mat(new Material(emission, Color(), Material::NORMAL));
+	sphere_->setMaterial(mat);
+}
+
+SphereLight::SphereLight(const SphereLight & light, rt::CopyOp copyop)
+	:Light(light,copyop),radius_(light.radius_)
+{
+	switch (copyop)
+	{
+	case rt::SHALLOW_COPY:
+		break;
+	case rt::RECUR_SHALLOW_COPY:
+		sphere_ = light.sphere_->cloneToSharedPtr(copyop);
+		break;
+	case rt::DEEP_COPY:
+		break;
+	}
+}
+
+std::shared_ptr<Drawable> SphereLight::getGeometry()
+{
+	return sphere_;
+}
+
+Vec3 SphereLight::getPosition(HitRecord * rec, Vec3 * normal, double * p)
+{
+	std::pair<double, double> uv;
+	getRandomPair(&uv);
+	double ru = uv.first, rv = uv.second;
+	Vec3 ppos = rec->ray.d * rec->t+ rec->ray.e;
+	Vec3 dir = (pos_ - ppos);
+	//建立坐标系
+	Vec3 w = dir.normalize(), u = ((fabs(w.x_) > 0.1 ? Vec3(0, 1, 0) : Vec3(1, 0, 0)) ^ w).normalize(), v = (w ^ u).normalize();
+	double cosmax = sqrt(1 - radius_ * radius_ / (dir*dir));
+	//选取随机向量
+	double cos_a = 1 - ru + ru * cosmax;
+	double sin_a = sqrt(1 - cos_a * cos_a);
+	double phi = 2 * PI * rv;
+	Vec3 lightDir = u * cos(phi)*sin_a + v * sin(phi)*sin_a + w * cos_a;
+	lightDir = lightDir.normalize();
+	//转换为光源采样点坐标
+	HitRecord temprec;
+	sphere_->hit(Ray{ ppos,lightDir }, ZERO, INFINITE, &temprec);
+	Vec3 hitp = ppos + lightDir * temprec.t; 
+	Vec3 nl = (hitp - pos_).normalize();
+	if (normal) *normal = nl;
+	//计算概率
+	if (p) {
+		*p = nl*(-lightDir) / (2 * PI*(1 - cosmax)) / temprec.t / temprec.t;
+	}
+	return hitp;
 }

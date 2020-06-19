@@ -7,20 +7,24 @@
 class Material : public RTObject
 {
 public:
+	enum Type {
+		NORMAL = 0x1,
+		SPECULAR = 0x2,
+		TRANSPARENT = 0x4,
+		MONTECARLO = 0x8
+	};
+
 	Material(Color amb, Color dif, Color spe, double shi); //NORMAL MERERIAL
 	Material(Color amb, Color dif, Color spe, Color mir, double shi); //SPECULAR MERERIAL
+	//For Monte Carlo Material, type can be NORMAL（Diffuse), SPECULAR, TRANSPARENT
+	Material(Color emission, Color color, Material::Type type); 
 	Material(Color a, double nr); //TRANSPARENT MERERIAL
 	Material(const Material& mat, rt::CopyOp copyop);
 	Material() = default;
 
 	META_Object(Material);
 
-	enum Type {
-		NORMAL = 0x1,
-		SPECULAR = 0x2,
-		TRANSPARENT = 0x4,
-	};
-
+	virtual void setMonteCarlo(Color color = Color(-1, -1, -1, 0), Color emission = Color(-1, -1, -1, 0));
 	//virtual Type getType() { return type; }
 	//virtual Color getAmbient() { return ambient; }
 	//virtual Color getDiffuse() { return diffuse; }
@@ -34,6 +38,9 @@ public:
 	virtual void setPosition(Vec3 pos) {};
 
 	virtual Type getType() { return type; }
+	virtual bool isMonteCarlo() { return type & MONTECARLO; }
+	virtual Color getColor(HitRecord* rec = nullptr) { return diffuse; } //for Monte Carlo Path Tracing
+	virtual Color getEmission(HitRecord* rec = nullptr) { return emission; } //for Monte Carlo Path Tracing
 	virtual Color getAmbient(HitRecord* rec = nullptr) { return ambient; }
 	virtual Color getDiffuse(HitRecord* rec = nullptr) { return diffuse; }
 	virtual Color getSpecular(HitRecord* rec = nullptr) { return specular; }
@@ -46,6 +53,7 @@ public:
 
 private:
 	Type type;
+	Color emission;
 	Color ambient;
 	Color diffuse;
 	Color specular;
@@ -144,11 +152,12 @@ public:
 		auto hf1 = min(1.0, max(0.0, max(linenoise_ - 0.6, 0.6 - linenoise_)*2.5 - 0.05));
 		auto hf2 = min(1.0, max(0.0, max(noise_ - 0.4, 0.4 - noise_) * 5 - 0.05));
 		auto hf = hf1 * hf2;
-		return (Material::getSpecular(rec) & Color(noise_, noise_, noise_, 1)) + (Color(0.55, 0, 0, 1) & Color(1 - noise_, 1 - noise_, 1 - noise_, 1))&Color(hf, hf, hf, 1) * 0.85;
+		return (Material::getSpecular(rec) & Color(noise_, noise_, noise_, 1)) + (CenterColor & Color(1 - noise_, 1 - noise_, 1 - noise_, 1))&Color(hf, hf, hf, 1) * 0.85;
 	}
 	void setPosition(Vec3 pos) override;
 	Vec3 getNormal(Vec3 Normal) override; //管的中间突出来
 private:
+	const Color CenterColor = Color(0.45, 0, 0, 1);
 	double linenoise_ = 1;
 	std::shared_ptr<algorithm::PerlinNoiseGeneratorWithTime> lineperlin_;
 };

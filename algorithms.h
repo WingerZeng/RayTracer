@@ -12,6 +12,10 @@
 namespace algorithm {
 	inline Vec3 getBoundPoint(int index, const BoundBox_t bound);
 
+	inline double rand01() {
+		return rand()*1.0 / RAND_MAX;
+	}
+
 	inline void randFromDisk(double* x, double* y) {
 		do {
 			*x = (rand() * 1.0 / RAND_MAX - 0.5) * 2;
