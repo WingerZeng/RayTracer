@@ -40,7 +40,7 @@ Scene::Scene(const Scene& scene, rt::CopyOp copyop)
 	{
 	case RECUR_SHALLOW_COPY:
 		setPixels(scene.px_, scene.py_);
-		setRootNode(scene.node_->cloneToSharedPtr(RECUR_SHALLOW_COPY));
+		if(scene.node_) setRootNode(scene.node_->cloneToSharedPtr(RECUR_SHALLOW_COPY));
 		setCamera(scene.camera_->cloneToSharedPtr(RECUR_SHALLOW_COPY));
 		setClearColor(scene.backGround_);
 		for (const auto& light : scene.lights) {
@@ -106,7 +106,8 @@ void Scene::run(int x, int y)
 			std::pair<double, double> pair;
 			getRandomPair(&pair);
 			ray = camera_->getRay((pair.first + x * 1.0) / px_, (pair.second + y * 1.0) / py_);
-			color = color + SqrtMethod().reproduction(rayColor(ray, 0, INFINITE));
+			//color = color + SigmoidMethod().reproduction(rayColor(ray, 0, INFINITE));
+			color = color + rayColor(ray, 0, INFINITE);
 		}
 		colorArray_[x][y] = color * (1.0 / (n * n));
 		colorArray_[x][y].regularize();

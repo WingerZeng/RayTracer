@@ -165,6 +165,7 @@
     <ClCompile Include="octree.cpp" />
     <ClCompile Include="RTObject.cpp" />
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="smallpt.cpp" />
     <ClCompile Include="Surface.cpp" />
     <ClCompile Include="tonereproductionmethod.cpp" />
     <ClCompile Include="types.cpp" />

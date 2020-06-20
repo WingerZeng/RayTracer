@@ -49,9 +49,9 @@ private:
 	std::vector<std::vector<Color>> colorArray_;
 
 	//int sampleNum_=15;
-	int sampleNum_ = 2;
-	int maxJump_=10;
-	int rusJump_ = 5; //depth to start russian roulette
+	int sampleNum_ = 20;
+	int maxJump_ = 40;
+	int rusJump_ = 12; //depth to start russian roulette
 
 };
 void getRayColor(Scene* scene, std::vector<Ray> ray, double t0, double t1, int jumptime, std::vector<Color>& color);

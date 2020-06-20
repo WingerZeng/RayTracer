@@ -8,6 +8,7 @@ class Material : public RTObject
 {
 public:
 	enum Type {
+		NULLTYPE = 0x0,
 		NORMAL = 0x1,
 		SPECULAR = 0x2,
 		TRANSPARENT = 0x4,
